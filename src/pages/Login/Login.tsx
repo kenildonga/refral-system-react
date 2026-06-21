@@ -1,5 +1,5 @@
 import React, { useState, FormEvent, useEffect } from 'react';
-import { Mail, Lock, ArrowLeft, User } from 'lucide-react';
+import { Mail, Lock, ArrowLeft, User, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/ui/Button';
@@ -35,14 +35,14 @@ const Login = () => {
   } else if (path.includes('withdrawal')) {
     portal = 'withdrawal';
     title = 'User Withdrawal Portal';
-    identifierPlaceholder = 'user@example.com';
-    demoHint = 'user@example.com / password';
+    identifierLabel = 'Phone number';
+    identifierType = 'text';
+    identifierPlaceholder = '9876543210';
+    demoHint = 'Use your registered phone number and password';
   }
 
   useEffect(() => {
-    if (portal === 'withdrawal') {
-      setIdentifier('user@example.com');
-    } else if (portal === 'admin') {
+    if (portal === 'admin') {
       setIdentifier('superadmin@test.com');
     } else {
       setIdentifier('');
@@ -73,7 +73,7 @@ const Login = () => {
     }
   };
 
-  const IdentifierIcon = portal === 'agent' ? User : Mail;
+  const IdentifierIcon = portal === 'agent' ? User : portal === 'withdrawal' ? Phone : Mail;
 
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">

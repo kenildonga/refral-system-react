@@ -2,6 +2,7 @@ import { api } from '../lib/api';
 import type {
   AdminLoginResponse,
   AgentLoginResponse,
+  UserLoginResponse,
   MessageResponse,
 } from '../types/api';
 
@@ -23,12 +24,25 @@ export function agentLogin(agentLoginId: string, password: string) {
   });
 }
 
+export function userLogin(phoneNumber: string, password: string) {
+  return api<UserLoginResponse>('/users/login', {
+    method: 'POST',
+    body: JSON.stringify({ phoneNumber, password }),
+    token: null,
+    skipAuthHandler: true,
+  });
+}
+
 export function adminLogout() {
   return api<MessageResponse>('/admins/logout', { method: 'POST' });
 }
 
 export function agentLogout() {
   return api<MessageResponse>('/agents/logout', { method: 'POST' });
+}
+
+export function userLogout() {
+  return api<MessageResponse>('/users/logout', { method: 'POST' });
 }
 
 export function changeAdminPassword(currentPassword: string, newPassword: string) {

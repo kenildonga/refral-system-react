@@ -54,6 +54,7 @@ const RegisterUser = () => {
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
@@ -154,6 +155,18 @@ const RegisterUser = () => {
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       errors.email = t('register.err_email', 'Valid email is required');
     }
+    if (!password.trim()) {
+      errors.password = t('register.err_password_required', 'Password is required');
+    } else if (
+      password.length < 8 ||
+      !/[a-zA-Z]/.test(password) ||
+      !/[0-9]/.test(password)
+    ) {
+      errors.password = t(
+        'register.err_password_rules',
+        'Password must be at least 8 characters and include letters and numbers',
+      );
+    }
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -174,6 +187,7 @@ const RegisterUser = () => {
         lastName: lastName.trim(),
         phoneNumber,
         email: email.trim(),
+        password,
       });
       setCreatedUser(user);
       setStep('location');
@@ -360,6 +374,19 @@ const RegisterUser = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   error={fieldErrors.email}
+                  required
+                  disabled={submitting}
+                />
+                <Input
+                  label={t('register.password', 'Password')}
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t(
+                    'register.password_hint',
+                    'Minimum 8 characters with letters and numbers',
+                  )}
+                  error={fieldErrors.password}
                   required
                   disabled={submitting}
                 />

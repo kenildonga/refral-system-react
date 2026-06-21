@@ -2,8 +2,10 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import {
   adminLogin,
   agentLogin,
+  userLogin,
   adminLogout,
   agentLogout,
+  userLogout,
 } from '../services/auth.service';
 import {
   clearAccessToken,
@@ -14,7 +16,7 @@ import {
 } from '../lib/api';
 import { isAdminPortalRole } from '../lib/roles';
 import type { ApiError, PortalRole, Agent } from '../types/api';
-import { formatAgentName } from '../types/api';
+import { formatAgentName, formatUserName } from '../types/api';
 
 export interface User {
   id: string;
@@ -93,11 +95,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     password: string,
     portal: PortalRole,
   ): Promise<void> => {
-    if (portal === 'withdrawal') {
-      await mockWithdrawalLogin(identifier, password);
-      return;
-    }
-
     try {
       if (portal === 'agent') {
         const { accessToken, agent } = await agentLogin(identifier, password);
@@ -108,6 +105,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             email: agent.email,
             role: 'agent',
             agentLoginId: agent.agentLoginId,
+          },
+          accessToken,
+        );
+        return;
+      }
+
+      if (portal === 'withdrawal') {
+        const { accessToken, user: loginUser } = await userLogin(identifier, password);
+        persistSession(
+          {
+            id: loginUser.id,
+            name: formatUserName(loginUser),
+            email: loginUser.email,
+            role: 'withdrawal',
           },
           accessToken,
         );
@@ -129,22 +140,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const mockWithdrawalLogin = async (email: string, password: string) => {
-    if (email === 'user@example.com' && password === 'password') {
-      persistSession(
-        {
-          id: 'withdrawal-demo',
-          name: 'Standard User',
-          email,
-          role: 'withdrawal',
-        },
-        'mock-withdrawal-token',
-      );
-      return;
-    }
-    throw new Error('Invalid credentials for withdrawal. Use user@example.com / password');
-  };
-
   const logout = async (): Promise<void> => {
     const token = getAccessToken();
     const currentUser = user;
@@ -152,13 +147,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser(null);
     clearSession();
 
-    if (!token || token === 'mock-withdrawal-token' || !currentUser) {
+    if (!token || !currentUser) {
       return;
     }
 
     try {
       if (currentUser.role === 'agent') {
         await agentLogout();
+      } else if (currentUser.role === 'withdrawal') {
+        await userLogout();
       } else if (isAdminPortalRole(currentUser.role)) {
         await adminLogout();
       }

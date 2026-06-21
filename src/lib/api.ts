@@ -1,7 +1,7 @@
 import i18n from '../i18n';
 import type { ApiError } from '../types/api';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://10.172.119.95:3000';
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 const TOKEN_KEY = 'accessToken';
 

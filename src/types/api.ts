@@ -54,6 +54,11 @@ export interface AgentLoginResponse {
   agent: Agent;
 }
 
+export interface UserLoginResponse {
+  accessToken: string;
+  user: ReferralUser;
+}
+
 export interface MessageResponse {
   message: string;
 }
@@ -149,6 +154,7 @@ export interface CreateUserPayload {
   lastName: string;
   phoneNumber: string;
   email: string;
+  password: string;
 }
 
 export interface AssignAgentPayload {

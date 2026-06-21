@@ -8,12 +8,21 @@ import { useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getDashboardPath } from '../../lib/roles';
 
+type LoginFieldErrors = {
+  identifier?: string;
+  password?: string;
+};
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_REGEX = /^\d{10}$/;
+
 const Login = () => {
   const { login, isAuthenticated, user } = useAuth();
   const { t } = useTranslation();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -53,16 +62,68 @@ const Login = () => {
     return <Navigate to={getDashboardPath(user.role)} replace />;
   }
 
+  const getIdentifierError = (value: string): string | undefined => {
+    const trimmedValue = value.trim();
+
+    if (!trimmedValue) {
+      return `${identifierLabel} is required`;
+    }
+
+    if (portal === 'admin' && !EMAIL_REGEX.test(trimmedValue)) {
+      return 'Enter a valid email address';
+    }
+
+    if (portal === 'withdrawal' && !PHONE_REGEX.test(trimmedValue)) {
+      return 'Phone number must be exactly 10 digits';
+    }
+
+    return undefined;
+  };
+
+  const validateLoginForm = (): boolean => {
+    const nextErrors: LoginFieldErrors = {};
+    const identifierError = getIdentifierError(identifier);
+    const trimmedPassword = password.trim();
+
+    if (identifierError) {
+      nextErrors.identifier = identifierError;
+    }
+
+    if (!trimmedPassword) {
+      nextErrors.password = 'Password is required';
+    }
+
+    setFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleIdentifierChange = (value: string) => {
+    const nextValue =
+      portal === 'withdrawal' ? value.replace(/\D/g, '').slice(0, 10) : value;
+    setIdentifier(nextValue);
+    setFieldErrors((prev) => ({ ...prev, identifier: undefined }));
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    setFieldErrors((prev) => ({ ...prev, password: undefined }));
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!identifier || !password) {
-      toast.error(`Please enter both ${identifierLabel.toLowerCase()} and password`);
+    if (!validateLoginForm()) {
+      toast.error('Please fix the highlighted fields');
       return;
     }
 
+    const normalizedIdentifier =
+      portal === 'withdrawal'
+        ? identifier.replace(/\D/g, '')
+        : identifier.trim();
+
     setIsLoading(true);
     try {
-      await login(identifier, password, portal);
+      await login(normalizedIdentifier, password.trim(), portal);
       toast.success('Successfully logged in!');
       navigate(getDashboardPath(portal === 'admin' ? 'admin' : portal));
     } catch (error: unknown) {
@@ -110,7 +171,13 @@ const Login = () => {
               placeholder={identifierPlaceholder}
               icon={IdentifierIcon}
               value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              onChange={(e) => handleIdentifierChange(e.target.value)}
+              inputMode={portal === 'withdrawal' ? 'numeric' : undefined}
+              maxLength={portal === 'withdrawal' ? 10 : undefined}
+              pattern={portal === 'withdrawal' ? '\\d{10}' : undefined}
+              autoComplete={portal === 'admin' ? 'email' : 'username'}
+              error={fieldErrors.identifier}
+              required
               disabled={isLoading}
             />
 
@@ -121,7 +188,10 @@ const Login = () => {
                 placeholder="••••••••"
                 icon={Lock}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => handlePasswordChange(e.target.value)}
+                autoComplete="current-password"
+                error={fieldErrors.password}
+                required
                 disabled={isLoading}
               />
             </div>
